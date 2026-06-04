@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>숫자 야구 게임 ⚾</title>
+    <style>
+        body {
+            font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+            background-color: #f0f8ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .game-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            color: #1e90ff;
+            margin-bottom: 5px;
+        }
+        p.desc {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 120px;
+            padding: 10px;
+            font-size: 1.2em;
+            text-align: center;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            border-color: #1e90ff;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1.1em;
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0073e6;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        #restartBtn {
+            background-color: #ff4757;
+            display: none;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        #restartBtn:hover {
+            background-color: #ff2f43;
+        }
+        .log-container {
+            max-height: 250px;
+            overflow-y: auto;
+            text-align: left;
+            padding-right: 5px;
+        }
+        .log-item {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease-out;
+        }
+        .guess-num {
+            font-weight: bold;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+        }
+        .result-badge {
+            font-size: 0.9em;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        .shake {
+            animation: shake 0.4s;
+            border-color: #ff4757 !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h1>⚾ 숫자 야구 게임</h1>
+    <p class="desc">중복되지 않는 4자리 숫자를 맞춰보세요!</p>
+
+    <div class="input-group">
+        <input type="text" id="userInput" maxlength="4" placeholder="예: 1234" autocomplete="off">
+        <button id="submitBtn">확인</button>
+    </div>
+    
+    <button id="restartBtn">🔄 다시 시작하기</button>
+
+    <div class="log-container" id="logArea">
+        </div>
+</div>
+
+<script>
+    let answer = [];
+    let attempts = 0;
+
+    const userInput = document.getElementById('userInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const logArea = document.getElementById('logArea');
+
+    // 게임 초기화 함수 (랜덤 4자리 생성)
+    function initGame() {
+        let numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        answer = [];
+        attempts = 0;
+        logArea.innerHTML = '';
+        userInput.value = '';
+        userInput.disabled = false;
+        submitBtn.disabled = false;
+        restartBtn.style.display = 'none';
+
+        // 4개의 중복 없는 난수 뽑기
+        for (let i = 0; i < 4; i++) {
+            let randomIndex = Math.floor(Math.random() * numbers.length);
+            answer.push(numbers[randomIndex]);
+            numbers.splice(randomIndex, 1); // 뽑은 숫자 제거 (중복 방지)
+        }
+        console.log("정답 (테스트용):", answer.join('')); // 개발자 도구에서 확인 가능
+    }
+
+    // 에러 시 흔들림 애니메이션 적용
+    function showError() {
+        userInput.classList.remove('shake');
+        void userInput.offsetWidth; // DOM 리플로우 강제 트리거
+        userInput.classList.add('shake');
+        userInput.value = '';
+        userInput.focus();
+    }
+
+    // 입력값 검증
+    function validateInput(value) {
+        if (value.length !== 4) {
+            alert('❌ 4자리 숫자를 입력해주세요!');
+            return false;
+        }
+        if (isNaN(value)) {
+            alert('❌ 숫자만 입력 가능합니다!');
+            return false;
+        }
+        let uniqueChars = new Set(value.split(''));
+        if (uniqueChars.size !== 4) {
+            alert('❌ 중복된 숫자가 있습니다. 서로 다른 숫자를 입력해주세요!');
+            return false;
+        }
+        return true;
+    }
+
+    // 게임 논리 및 결과 판정
+    function play() {
+        const guess = userInput.value;
+
+        if (!validateInput(guess)) {
+            showError();
+            return;
+        }
+
+        attempts++;
+        let strikes = 0;
+        let balls = 0;
+
+        for (let i = 0; i < 4; i++) {
+            let num = parseInt(guess[i]);
+            if (num === answer[i]) {
+                strikes++;
+            } else if (answer.includes(num)) {
+                balls++;
+            }
+        }
+
+        displayResult(guess, strikes, balls);
+
+        if (strikes === 4) {
+            gameClear();
+        }
+
+        userInput.value = '';
+        userInput.focus();
+    }
+
+    // 결과를 화면에 출력
+    function displayResult(guess, strikes, balls) {
+        let resultText = '';
+        
+        if (strikes === 0 && balls === 0) {
+            resultText = '💥 아웃 (OUT)';
+        } else {
+            if (strikes > 0) resultText += `🟢 ${strikes}S `;
+            if (balls > 0) resultText += `🟡 ${balls}B`;
+        }
+
+        const logItem = document.createElement('div');
+        logItem.className = 'log-item';
+        logItem.innerHTML = `
+            <div>
+                <span style="color:#aaa; font-size:0.8em;">${attempts}회</span>
+                <span class="guess-num" style="margin-left: 10px;">${guess}</span>
+            </div>
+            <span class="result-badge">${resultText}</span>
+        `;
+        
+        // 가장 위에 최신 결과 추가
+        logArea.insertBefore(logItem, logArea.firstChild);
+    }
+
+    // 게임 클리어 처리
+    function gameClear() {
+        const logItem = document.createElement('div');
+        logItem.className = 'log-item';
+        logItem.style.backgroundColor = '#d4edda';
+        logItem.innerHTML = `<strong style="color: #28a745; width:100%; text-align:center;">🎉 정답입니다! (${attempts}번 만에 성공) 🎉</strong>`;
+        logArea.insertBefore(logItem, logArea.firstChild);
+
+        userInput.disabled = true;
+        submitBtn.disabled = true;
+        restartBtn.style.display = 'block';
+    }
+
+    // 이벤트 리스너 설정
+    submitBtn.addEventListener('click', play);
+    userInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            play();
+        }
+    });
+    restartBtn.addEventListener('click', initGame);
+
+    // 게임 시작
+    initGame();
+</script>
+
+</body>
+</html>
